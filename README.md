@@ -1,6 +1,6 @@
 # Engineering Team — Claude Code plugin
 
-`bhaa-engineering-team` is a reusable multi-agent software engineering team for [Claude Code](https://docs.claude.com/en/docs/claude-code/overview). It packages a Product Owner, Software Architect, and Backend, Frontend, Security, QA, and DevOps specialists, plus a library of 21 engineering skills they load on demand. You talk to one primary agent (usually the architect or the PO); it plans the work, delegates to specialists, reviews their results, and reports back with evidence.
+`engineering-team` is a reusable multi-agent software engineering team for [Claude Code](https://docs.claude.com/en/docs/claude-code/overview). It packages a Product Owner, Software Architect, and Backend, Frontend, Security, QA, and DevOps specialists, plus a library of 21 engineering skills they load on demand. You talk to one primary agent (usually the architect or the PO); it plans the work, delegates to specialists, reviews their results, and reports back with evidence.
 
 The plugin contains instructions only: no code, no credentials, no MCP server configuration.
 
@@ -60,7 +60,7 @@ The two review skills are named `engineering-code-review` and `engineering-secur
 ```text
 engineering-team/
 ├── .claude-plugin/
-│   ├── plugin.json          # plugin manifest (name: bhaa-engineering-team)
+│   ├── plugin.json          # plugin manifest (name: engineering-team)
 │   └── marketplace.json     # marketplace catalog (name: engineering-team), source "./"
 ├── agents/                  # 7 subagent definitions (auto-discovered)
 ├── skills/<name>/SKILL.md   # 21 skills (auto-discovered)
@@ -68,8 +68,8 @@ engineering-team/
 └── LICENSE
 ```
 
-- The repository is both a **marketplace** (`engineering-team`) and the **plugin** it lists (`bhaa-engineering-team`).
-- Claude Code namespaces plugin components: agents are invoked as `bhaa-engineering-team:<agent>` and skills as `bhaa-engineering-team:<skill>`. Each agent file includes a short "Plugin naming" note so it uses the namespaced names, and the `Agent(...)` restrictions in `architect.md` and `frontend.md` list the namespaced specialists.
+- The repository is both a **marketplace** and the **plugin** it lists; both are named `engineering-team`, so the install ID is `engineering-team@engineering-team`.
+- Claude Code namespaces plugin components: agents are invoked as `engineering-team:<agent>` and skills as `engineering-team:<skill>`. Each agent file includes a short "Plugin naming" note so it uses the namespaced names, and the `Agent(...)` restrictions in `architect.md` and `frontend.md` list the namespaced specialists.
 - Each agent's instructions name the skills it should use (the skill map is also in `architect.md`). Skills are not copied into the agents.
 - Safety rules live in the agent instructions. These include approval before production deploys, destructive database operations, and Jira issue creation, and the read-only security reviewer. For stricter enforcement, add `permissions.ask` rules to your own `~/.claude/settings.json` (for example `"Bash(git push:*)"`, `"Bash(terraform apply:*)"`). The plugin doesn't ship settings.
 
@@ -81,10 +81,10 @@ Requires Claude Code with plugin support. Check your version with `claude --vers
 
 ```bash
 claude plugin marketplace add BhaaRizik/engineering-team
-claude plugin install bhaa-engineering-team@engineering-team
+claude plugin install engineering-team@engineering-team
 ```
 
-If you also keep un-namespaced copies of these agents in `~/.claude/agents/` and `~/.claude/skills/`, both sets will appear. `claude --agent architect` runs your personal copy, and `claude --agent bhaa-engineering-team:architect` runs the plugin version. To use only the plugin, move your personal copies out of those folders.
+If you also keep un-namespaced copies of these agents in `~/.claude/agents/` and `~/.claude/skills/`, both sets will appear. `claude --agent architect` runs your personal copy, and `claude --agent engineering-team:architect` runs the plugin version. To use only the plugin, move your personal copies out of those folders.
 
 ### For another developer
 
@@ -92,14 +92,14 @@ The repository is public, so no access grant is needed. From a terminal:
 
 ```bash
 claude plugin marketplace add BhaaRizik/engineering-team
-claude plugin install bhaa-engineering-team@engineering-team
+claude plugin install engineering-team@engineering-team
 ```
 
 Or inside a Claude Code session:
 
 ```text
 /plugin marketplace add BhaaRizik/engineering-team
-/plugin install bhaa-engineering-team@engineering-team
+/plugin install engineering-team@engineering-team
 ```
 
 Restart Claude Code after installing.
@@ -108,11 +108,11 @@ Restart Claude Code after installing.
 
 ```bash
 cd your-project
-claude --agent bhaa-engineering-team:architect   # primary coordinator for engineering work
-claude --agent bhaa-engineering-team:po          # requirements → backlog → (approved) Jira
+claude --agent engineering-team:architect   # primary coordinator for engineering work
+claude --agent engineering-team:po          # requirements → backlog → (approved) Jira
 ```
 
-To make the architect the default for every session, add `"agent": "bhaa-engineering-team:architect"` to `~/.claude/settings.json`.
+To make the architect the default for every session, add `"agent": "engineering-team:architect"` to `~/.claude/settings.json`.
 
 Example request that engages several specialists:
 
@@ -128,7 +128,7 @@ The PO works without Jira. It stops at an approved, ready-to-create backlog. To 
 
 ```bash
 claude plugin marketplace update engineering-team
-claude plugin update bhaa-engineering-team@engineering-team
+claude plugin update engineering-team@engineering-team
 ```
 
 Restart Claude Code to apply.
@@ -138,7 +138,7 @@ Restart Claude Code to apply.
 1. Edit agents or skills in this repository.
 2. Bump `version` in `.claude-plugin/plugin.json` **and** the plugin entry in `.claude-plugin/marketplace.json` (semver: patch for wording fixes, minor for new skills/agents, major for renamed or removed components).
 3. Validate: `claude plugin validate .`
-4. Test locally without installing: `claude --plugin-dir . --agent bhaa-engineering-team:architect`
+4. Test locally without installing: `claude --plugin-dir . --agent engineering-team:architect`
 5. Commit and push to `main`.
 
 ## Contributing
@@ -163,7 +163,7 @@ Restart Claude Code to apply.
 
 1. Create `agents/<agent-name>.md` with frontmatter `name`, `description` (a specific "use for…" so delegation works), and `tools` (least privilege), plus `model: inherit` if you want it to follow the session model.
 2. Add the "Plugin naming" note (copy it from an existing agent), a Skills section, the collaboration rules, and a report format.
-3. Register it in `agents/architect.md`: add it to the `Agent(...)` list in `tools` as `bhaa-engineering-team:<agent-name>`, add a row to the routing table and the skill map, and update the overlap rules.
+3. Register it in `agents/architect.md`: add it to the `Agent(...)` list in `tools` as `engineering-team:<agent-name>`, add a row to the routing table and the skill map, and update the overlap rules.
 4. Update this README, validate, test, and bump the minor version.
 
 ### Rules for contributions
