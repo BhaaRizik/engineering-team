@@ -1,0 +1,8 @@
+# Never commit secrets or personal configuration
+.env
+.env.*
+*.pem
+*.key
+.claude/settings.local.json
+.mcp.json
+.DS_Store

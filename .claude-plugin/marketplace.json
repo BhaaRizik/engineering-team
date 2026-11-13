@@ -1,0 +1,21 @@
+{
+  "name": "engineering-team",
+  "owner": { "name": "Bhaa Rizik", "url": "https://github.com/BhaaRizik" },
+  "metadata": {
+    "description": "Claude Code marketplace for the bhaa-engineering-team plugin.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "bhaa-engineering-team",
+      "source": "./",
+      "description": "A reusable multi-agent software engineering team with Product Owner, Software Architect, Backend, Frontend, Security, QA, and DevOps specialists, supported by shared engineering skills.",
+      "version": "1.0.0",
+      "author": { "name": "Bhaa Rizik" },
+      "homepage": "https://github.com/BhaaRizik/engineering-team",
+      "repository": "https://github.com/BhaaRizik/engineering-team",
+      "license": "MIT",
+      "category": "development"
+    }
+  ]
+}
