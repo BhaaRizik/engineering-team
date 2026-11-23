@@ -1,6 +1,6 @@
 ---
 name: jira-backlog-management
-description: Safely creating and managing a Jira backlog through an MCP or other Jira integration — detecting whether Jira tools are connected, discovering projects, issue types, hierarchy, fields (Story Points, custom "Assigned Agent"), priorities, statuses, and permissions; the mandatory approval gate before any issue is created; parent-before-child creation, epic/parent linking, dependency links, agent-ownership labels, duplicate prevention with JQL, verification, and honest reporting of created and failed issues. Use whenever Jira is involved — setup, discovery, issue creation or updates, or reporting backlog status.
+description: Safely creating and managing a Jira backlog through an MCP or other Jira integration — detecting whether Jira tools are connected, discovering projects, issue types, hierarchy, fields (Story Points, custom "Assigned Agent"), priorities, statuses, and permissions; the mandatory approval gate before any issue is created; parent-before-child creation, epic/parent linking, dependency links, agent-ownership labels, duplicate prevention with JQL, verification, honest reporting of created and failed issues, and moving issues between statuses (To Do / In Progress / In Review / Done) with a bundled transition script. Use whenever Jira is involved — setup, discovery, issue creation or updates, status changes, or reporting backlog status.
 ---
 
 # Jira Backlog Management
@@ -12,6 +12,8 @@ Turn an **approved** backlog into correct Jira issues — or explain exactly wha
 - A new project needs a Jira connection and discovery.
 - The user approved a backlog for creation.
 - Updating, linking, or reporting on Jira issues.
+- Moving issues between statuses (To Do → In Progress → In Review → Done).
+- Putting issues on the board: adding them to the active sprint and assigning them.
 
 ## Best practices
 **0. Approval gate (non-negotiable)**
@@ -65,6 +67,38 @@ Turn an **approved** backlog into correct Jira issues — or explain exactly wha
 - Re-query by batch label; compare against the approved list (counts by type, parents, labels, priorities).
 - Report: Key · Summary · Type · Parent Epic · Priority · Agent · URL (`https://<site>/browse/<KEY>`), plus failures with error messages and what remains to be done.
 
+**6. Update issue status (To Do / In Progress / In Review / Done)**
+Many Jira MCP servers have no status-transition tool. Before saying a status can't be changed, look for one with `ToolSearch` (`transition`, `jira status`); if none exists, use the bundled script `scripts/jira_transition.py` in this skill's folder (Python 3, standard library only; Jira Cloud REST API v3). `<skill-dir>` below is the base directory shown when the skill loads: under `~/.claude/plugins/` for the plugin, `~/.claude/skills/jira-backlog-management/` for a personal install:
+```bash
+S=<skill-dir>/scripts/jira_transition.py
+python3 $S status PROJ-5 PROJ-6            # current status (read-only)
+python3 $S list PROJ-5                      # transitions available from here (read-only)
+python3 $S move PROJ-5 inprogress --dry-run # check what would happen (read-only)
+python3 $S move PROJ-5 PROJ-6 done --comment "Verified by QA"   # WRITE
+```
+- The target can be a status name (`"In Progress"`), a transition name, a transition id, or an alias: `todo`, `inprogress`, `review`, `done`. If there's no match or more than one, the script changes nothing and prints the available transitions.
+- Credentials: `ATLASSIAN_BASE_URL` / `ATLASSIAN_EMAIL` / `ATLASSIAN_API_TOKEN` (or `JIRA_*`) from the environment, or else the `env` block of the Jira MCP server in `~/.claude.json` (server name `$JIRA_MCP_SERVER`, default `jira`). The token is never printed. Don't echo credentials or put them in the repository.
+- Transitions are write operations, so the approval gate applies. Run `status`/`list`/`--dry-run` freely. Run `move` only after the user approved that specific status change (which issues, which target status). In a workflow where the user has already approved the work (e.g. "implement PROJ-7"), moving that issue to In Progress at the start and to In Review/Done once verified counts as part of the approved work. Say so in the report.
+- The workflow may not allow a direct jump (e.g. To Do → Done). Run `list` and step through the intermediate statuses only if the user approved the final status.
+- `move` re-reads the issue and prints `(verified)` when it landed. Report exactly what it printed. Exit code 2 means at least one issue failed; report each failure.
+- Moving a parent (epic) doesn't move its children, and the reverse is also true. Ask before cascading.
+
+**7. Put issues on the board (sprint and assignee)**
+A Scrum board shows only the issues in the **active sprint**. Issues in the backlog never appear on the board, whatever their status, so "the board is empty" almost always means the active sprint has no issues. Use the bundled `scripts/jira_board.py` (same credentials as `jira_transition.py`; the token is never printed):
+```bash
+B=<skill-dir>/scripts/jira_board.py
+python3 $B sprints PROJ                                    # boards and sprints (read-only)
+python3 $B board PROJ                                      # what the board shows now (read-only)
+python3 $B me                                               # connected user (read-only)
+python3 $B add-to-sprint PROJ-14 --project PROJ --dry-run # check (read-only)
+python3 $B add-to-sprint PROJ-14 PROJ-15 --project PROJ  # WRITE: active sprint by default; --sprint future|ID
+python3 $B assign PROJ-14 --to me                          # WRITE: or --to <accountId>
+```
+- Epics are never added to a sprint (the script skips them); add their stories and tasks.
+- Issues already in the sprint or already assigned are skipped, so reruns are safe. Writes print `(verified)` after re-reading the issue.
+- Approval: these are writes, so the approval gate applies. When the user approved starting work on an issue (e.g. "implement PROJ-14"), adding it to the active sprint and assigning it to the user is part of that approval. Assign only the connected user (`me`) or a real account the user named.
+- When the active sprint has ended or none is active, don't start or create sprints; tell the user and ask.
+
 ## Workflow
 1. Ask for the Jira project URL / key (and configuration details only if discovery can't find them).
 2. Detect tools → discover configuration (read-only) → summarize.
@@ -95,6 +129,8 @@ Turn an **approved** backlog into correct Jira issues — or explain exactly wha
 - [ ] Agent ownership recorded (custom field or `agent-*` labels); no fake assignees.
 - [ ] Dependencies linked.
 - [ ] Verification query matches the approved list; failures reported.
+- [ ] Status changes were approved, ran through `jira_transition.py` (or an MCP transition tool), and were reported as verified.
+- [ ] Issues being worked on are in the active sprint (`jira_board.py board`) and assigned; changes reported as verified.
 
 ## Examples
 **Description body**

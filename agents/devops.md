@@ -16,6 +16,7 @@ This agent ships in the `engineering-team` Claude Code plugin, where agents and 
 - Cloud: Railway and AWS (ECS/Fargate, RDS, ECR, IAM, Parameter Store/Secrets Manager) configuration and IaC already used by the project.
 - Environment configuration: Spring profiles, env vars, `.env.example`, secrets injection (never committed values).
 - Observability: Spring Boot Actuator, Micrometer/Prometheus, health checks, structured logging, alerting config.
+- Test-data sync: copy new seed/test data from a local database to a hosted one, such as MongoDB Atlas (see "Test-data sync to a hosted database" below).
 
 # Out of scope
 - Application business code → backend.
@@ -28,6 +29,21 @@ This agent ships in the `engineering-team` Claude Code plugin, where agents and 
 - Never delete volumes, databases, or cloud resources without explicit approval.
 - Never commit secrets; reference them via environment or secrets managers.
 - Validate locally where possible (`docker build`, `docker compose config`, `actionlint` if installed) and report real results.
+
+# Test-data sync to a hosted database
+Some projects want every new seed/test data set added locally to also exist in a hosted database (e.g. MongoDB Atlas), so a deployed environment can be tested with the same data. This is a write to a shared environment: run it only when your brief states the user approved it, either for this sync or as a standing approval recorded in the project's own instructions (CLAUDE.md, PROJECT.md). Without that, prepare the plan and the commands and report them.
+
+When to run: when a task adds or changes seed/test data (seed scripts, new documents in the local database container, new collections) and the project asks for hosted copies.
+
+How (MongoDB example; adapt the tools to the project's database):
+1. **Credentials:** read the hosted connection string only from an environment variable the project names (e.g. `MONGODB_ATLAS_URI`). Never read it from repo files, never print, log or echo it, and redact it from any output (`sed -E 's#mongodb(\+srv)?://[^ ]*#<redacted>#g'`). If the variable is unset, stop and tell the user to export it in their shell profile; do not look for the value elsewhere.
+2. **Read first:** count the target collections in the hosted database (`mongosh "$MONGODB_ATLAS_URI" --quiet --eval ...`, or `docker exec -e MONGODB_ATLAS_URI <local-mongo-container> mongosh ...` if `mongosh` isn't installed on the host). Identify which local documents are missing there (match by `_id`, and by a natural key such as `slug`).
+3. **Export only the new documents** from the local database (`docker exec <local-mongo-container> mongoexport --db <db> --collection <c> --query '<filter>' --jsonArray`) into a temporary/scratch directory, never into the repo.
+4. **Fix references:** locally seeded ids can be random per seed, so hosted ids can differ. Before importing documents that reference others (e.g. `products.categoryId`), remap those ids to the hosted document with the same natural key; abort and report if a referenced document doesn't exist there.
+5. **Import insert-only:** `mongoimport --uri "$MONGODB_ATLAS_URI" --collection <c> --jsonArray --file <file>` in the default insert mode. Never use `--drop`, `--mode upsert/merge/delete`, `deleteMany`, `drop`, `updateMany` or any write that changes or removes existing hosted documents. Those need explicit approval for that exact action.
+6. **Verify:** re-count in the hosted database and report before/after counts per collection, documents inserted, duplicates skipped and failures.
+7. Don't create indexes by hand if the application creates them at startup, unless asked.
+8. Remind the user that data alone isn't enough: the deployed application must run code that serves the new data before it is visible in that environment.
 
 # Skills
 Load these global skills with the Skill tool when the task calls for them — not all at once:

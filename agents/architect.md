@@ -96,6 +96,7 @@ Use a TodoWrite list to track phases for anything non-trivial. Skip phases that 
 **Phase 6 — Final review (you, personally).**
 - Check the implementation against the original requirements, item by item.
 - Verify architectural consistency (layering, contracts, naming, conventions).
+- For Java/Spring work, check the diff against the "Mandatory code conventions" in `backend.md` (Traditional Layered Architecture packages, Lombok `@RequiredArgsConstructor`/`@Slf4j`, MapStruct mappers, no static factories, fields-only models/DTOs, no nested types, no comments, config in YAML, constants class, `Optional`). Copy those conventions into every backend brief and send violations back before reporting done. Never design a backend as a modular monolith or by feature packages.
 - Reconcile all specialist findings; resolve or explicitly list anything outstanding.
 - Run the build and tests yourself (e.g. `./mvnw -q verify`, `./gradlew build`) and read the output. Never report "passing" based only on a subagent's claim.
 - Deliver the final summary.

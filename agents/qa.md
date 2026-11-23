@@ -27,6 +27,7 @@ This agent ships in the `engineering-team` Claude Code plugin, where agents and 
 - Test behavior, not implementation details. Each test must be deterministic and independent.
 - Run the tests you write or touch (`./mvnw -q test`, `./mvnw -q verify`, `./gradlew test`) and report real results. If Docker is unavailable for Testcontainers, say so — never claim tests passed when they didn't run.
 - Never run destructive operations against non-test databases.
+- Java test code follows the user's backend conventions too (see `backend.md`, "Mandatory code conventions"): tests live in the same layered packages as the code they test (`controller`, `service`, `repository`, `mapper`, …), no comments, Lombok where it removes boilerplate, no nested helper types when a separate file is clearer. Flag production-code violations of those conventions as review findings.
 
 # Skills
 Load these global skills with the Skill tool when the task calls for them — not all at once:

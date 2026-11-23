@@ -2,26 +2,26 @@
 
 `engineering-team` is a reusable multi-agent software engineering team for [Claude Code](https://docs.claude.com/en/docs/claude-code/overview). It packages a Product Owner, Software Architect, and Backend, Frontend, Security, QA, and DevOps specialists, plus a library of 21 engineering skills they load on demand. You talk to one primary agent (usually the architect or the PO); it plans the work, delegates to specialists, reviews their results, and reports back with evidence.
 
-The plugin contains instructions only: no code, no credentials, no MCP server configuration.
+The plugin contains instructions plus two small standard-library Python helpers for Jira status and board updates. It holds no credentials and no MCP server configuration.
 
 ## What the team does
 
-- **Turns requirements into a backlog.** The PO analyzes requirement documents, asks clarification questions, and prepares epics, user stories, and acceptance criteria. It creates Jira issues only after your explicit approval.
+- **Turns requirements into a backlog.** The PO analyzes requirement documents, asks clarification questions, and prepares epics, user stories, and acceptance criteria. It creates Jira issues only after your explicit approval, and keeps the board current (active sprint, assignee, status) for approved work.
 - **Designs and builds software.** The architect designs the solution, defines API contracts, and delegates implementation to the backend (Java/Spring Boot) and frontend (React/TypeScript) engineers.
 - **Reviews and tests.** The security engineer reviews security-sensitive work read-only. The QA engineer derives test cases from requirements and risks and writes automated tests.
-- **Ships it.** The DevOps engineer handles Docker, CI/CD, environments, and observability. It never deploys to production without your approval.
+- **Ships it.** The DevOps engineer handles Docker, CI/CD, environments, observability, and insert-only test-data syncs to hosted databases. It never deploys or writes to shared environments without your approval.
 
 ## Agents
 
 | Agent | Role | Responsibilities | Can delegate to |
 |---|---|---|---|
-| `po` | Senior Product Owner & Business Analyst | Requirements analysis, clarification questions, epics/stories/acceptance criteria, prioritization, approval-gated Jira backlog creation. Never writes code. | Read-only consultation with the architect and specialists |
+| `po` | Senior Product Owner & Business Analyst | Requirements analysis, clarification questions, epics/stories/acceptance criteria, prioritization, approval-gated Jira backlog creation, sprint/assignee/status updates. Never writes code. | Read-only consultation with the architect and specialists |
 | `architect` | Software Architect & coordinator | Requirements → architecture → delegation → QA → final verified review. Owns API contracts and technical decisions. | `po`, `backend`, `frontend`, `security`, `qa`, `devops` |
-| `backend` | Java Spring Backend Engineer | Spring Boot APIs, business logic, persistence and migrations, backend performance | — |
+| `backend` | Java Spring Backend Engineer | Spring Boot APIs, business logic, persistence and migrations, backend performance. Enforces mandatory code conventions (layered packages with domain sub-packages, Lombok, MapStruct, plain models/DTOs, config in YAML, no comments) | — |
 | `frontend` | Senior Frontend Engineer & React Architect | React + TypeScript, feature-first architecture, Styled Components (no Tailwind), TanStack Query, forms, accessibility | `backend`, `security`, `qa`, `devops` (when run as the primary agent) |
 | `security` | Security Engineer (read-only reviewer) | Auth/authz design and review, OWASP, secrets, dependency vulnerabilities | — |
 | `qa` | QA Engineer | Test strategy, unit/integration/API/E2E tests (writes test code only) | — |
-| `devops` | DevOps Engineer | Docker, GitHub Actions, Railway/AWS, environments, observability, rollbacks | — |
+| `devops` | DevOps Engineer | Docker, GitHub Actions, Railway/AWS, environments, observability, rollbacks, approved insert-only test-data sync | — |
 
 Subagents can't start other subagents in Claude Code, so delegation is one level deep. Specialists return reports to the coordinator, who relays decisions between them.
 
@@ -51,7 +51,7 @@ Agents load skills with Claude Code's Skill tool only when a task needs them.
 | `user-story-writing` | Epic/story/task decomposition and story template | po |
 | `acceptance-criteria` | Testable Given/When/Then criteria | po |
 | `backlog-prioritization` | Priorities, MVP vs. future, dependencies, honest estimates | po |
-| `jira-backlog-management` | Approval-gated Jira discovery, creation, and verification | po |
+| `jira-backlog-management` | Approval-gated Jira discovery, creation, verification, status transitions, and sprint/assignee updates (bundled `scripts/jira_transition.py`, `scripts/jira_board.py`) | po |
 
 The two review skills are named `engineering-code-review` and `engineering-security-review` so they stay separate from Claude Code's built-in `/code-review` and `/security-review` commands.
 
@@ -63,7 +63,7 @@ engineering-team/
 │   ├── plugin.json          # plugin manifest (name: engineering-team)
 │   └── marketplace.json     # marketplace catalog (name: engineering-team), source "./"
 ├── agents/                  # 7 subagent definitions (auto-discovered)
-├── skills/<name>/SKILL.md   # 21 skills (auto-discovered)
+├── skills/<name>/SKILL.md   # 21 skills (auto-discovered); jira-backlog-management also ships scripts/
 ├── README.md
 └── LICENSE
 ```
@@ -168,9 +168,9 @@ Restart Claude Code to apply.
 
 ### Rules for contributions
 
-- Instructions only. Never commit API keys, tokens, passwords, `.env` files, personal settings, or MCP configurations.
+- Instructions and small, dependency-free helper scripts only. Never commit API keys, tokens, passwords, `.env` files, personal settings, or MCP configurations.
 - Keep everything project-neutral and reusable.
-- Never weaken the approval gates (production deploys, destructive data operations, Jira creation).
+- Never weaken the approval gates (production deploys, destructive data operations, writes to hosted databases, Jira creation and status changes).
 
 ## License
 

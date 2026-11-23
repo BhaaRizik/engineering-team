@@ -1,6 +1,6 @@
 {
   "name": "engineering-team",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A reusable multi-agent software engineering team with Product Owner, Software Architect, Backend, Frontend, Security, QA, and DevOps specialists, supported by shared engineering skills.",
   "author": { "name": "Bhaa Rizik", "url": "https://github.com/BhaaRizik" },
   "homepage": "https://github.com/BhaaRizik/engineering-team",
