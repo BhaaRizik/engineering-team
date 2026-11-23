@@ -1,6 +1,6 @@
 # Engineering Team — Claude Code plugin
 
-`engineering-team` is a reusable multi-agent software engineering team for [Claude Code](https://docs.claude.com/en/docs/claude-code/overview). It packages a Product Owner, Software Architect, and Backend, Frontend, Security, QA, and DevOps specialists, plus a library of 21 engineering skills they load on demand. You talk to one primary agent (usually the architect or the PO); it plans the work, delegates to specialists, reviews their results, and reports back with evidence.
+`engineering-team` is a reusable multi-agent software engineering team for [Claude Code](https://docs.claude.com/en/docs/claude-code/overview). It packages a Product Owner, Software Architect, and Backend, Frontend, Security, QA, and DevOps specialists, plus a library of 22 engineering skills they load on demand. You talk to one primary agent (usually the architect or the PO); it plans the work, delegates to specialists, reviews their results, and reports back with evidence.
 
 The plugin contains instructions plus two small standard-library Python helpers for Jira status and board updates. It holds no credentials and no MCP server configuration.
 
@@ -51,6 +51,7 @@ Agents load skills with Claude Code's Skill tool only when a task needs them.
 | `user-story-writing` | Epic/story/task decomposition and story template | po |
 | `acceptance-criteria` | Testable Given/When/Then criteria | po |
 | `backlog-prioritization` | Priorities, MVP vs. future, dependencies, honest estimates | po |
+| `jira-feature-implementation` | End-to-end delivery of a Jira issue from its key or URL: PO analysis, architecture, approval gate, implementation, security, QA, verification, board status updates | architect (main session) |
 | `jira-backlog-management` | Approval-gated Jira discovery, creation, verification, status transitions, and sprint/assignee updates (bundled `scripts/jira_transition.py`, `scripts/jira_board.py`) | po |
 
 The two review skills are named `engineering-code-review` and `engineering-security-review` so they stay separate from Claude Code's built-in `/code-review` and `/security-review` commands.
@@ -63,7 +64,7 @@ engineering-team/
 │   ├── plugin.json          # plugin manifest (name: engineering-team)
 │   └── marketplace.json     # marketplace catalog (name: engineering-team), source "./"
 ├── agents/                  # 7 subagent definitions (auto-discovered)
-├── skills/<name>/SKILL.md   # 21 skills (auto-discovered); jira-backlog-management also ships scripts/
+├── skills/<name>/SKILL.md   # 22 skills (auto-discovered); jira-backlog-management also ships scripts/
 ├── README.md
 └── LICENSE
 ```
@@ -117,6 +118,29 @@ To make the architect the default for every session, add `"agent": "engineering-
 Example request that engages several specialists:
 
 > Add JWT login with refresh tokens to the orders API, a React login page, Testcontainers integration tests, and a GitHub Actions workflow that runs them.
+
+### Implement a Jira issue from its key
+
+With Jira connected (see below), start the architect in your project and paste an issue key or URL:
+
+```text
+claude --agent engineering-team:architect
+> PROJ-14
+```
+
+The `jira-feature-implementation` skill reads the issue and its parent, children and links. It runs the team workflow and stops at an approval gate before any code is written. After your approval it implements, reviews, tests and verifies the work, and asks `po` to move the issue In Progress → In Review → Done (Done only after the PR is merged). Commits, pushes and PRs happen only when you ask.
+
+The skill is project-neutral. It takes project facts from your repository's `CLAUDE.md` / `PROJECT.md`, so give it a short section like this:
+
+```markdown
+## Jira feature workflow
+- Jira site: https://<site>.atlassian.net, project key: PROJ
+- Repos: ../my-app-be (Spring Boot), ../my-app-fe (React)
+- Verify: `./mvnw -q verify`; `npm run lint && npm run build && npx vitest run`
+- Conventions and config rules: see PROJECT.md §4
+- Standing approvals: (e.g. insert-only test-data sync to the staging database)
+- Known project facts: existing APIs to reuse, Jira MCP quirks, …
+```
 
 ### Jira (optional, for the PO)
 
